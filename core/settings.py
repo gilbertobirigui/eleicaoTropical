@@ -10,26 +10,75 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
+import sys
+from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
-STATIC_DIR = os.path.join(BASE_DIR.add()'static')
+TEMPLATE_DIR = os.path.join(BASE_DIR,'templates')
+STATIC_DIR=os.path.join(BASE_DIR,'static') 
+
+
+# Adicionar essa tag para que nosso projeto encontre o .env
+load_dotenv(os.path.join(BASE_DIR, ".env")) 
+
+
+# Diz para Projeto Django aonde estão nossos aplicativos
+APPS_DIR = str(os.path.join(BASE_DIR,'apps')) # Dentro da pasta apps na raiz do projeto
+sys.path.insert(0, APPS_DIR)
+
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vw-jr4wo1ns-4#z5-9g(cokgt#z6s7d5s54lj-uxw#_7n3h6zr'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost', 
+	'127.0.0.1',
+]
 
+# CORS Config
+CORS_ALLOW_HEADERS = list(default_headers) + [
+	                 'X-Register',
+                    ] 
 
 # Application definition
+
+
+CORS_ORIGIN_ALLOW_ALL = True  
+# CORS_ORIGIN_ALLOW_ALL como True, o que permite que qualquer site acesse seus recursos.
+# Defina como False e adicione o site no CORS_ORIGIN_WHITELIST onde somente o site da lista acesse os seus recursos.
+
+CORS_ALLOW_CREDENTIALS = False 
+
+CORS_ORIGIN_WHITELIST = ['http://meusite.com',] # Lista. 
+
+
+
+
+if not DEBUG:
+	SECURE_SSL_REDIRECT = True
+	ADMINS = [(os.getenv('SUPER_USER'), os.getenv('EMAIL'))]
+	SESSION_COOKIE_SECURE = True
+	CSRF_COOKIE_SECURE = True
+
+# if not DEBUG: verifica se a aplicação está sendo executada em modo de depuração (DEBUG=True). Se DEBUG for False, isso significa que a aplicação está sendo executada em um ambiente de produção, portanto, as configurações de segurança devem ser aplicadas.
+# SECURE_SSL_REDIRECT direciona todas as solicitações HTTP para HTTPS.
+# ADMINS é uma lista de tuplas que contêm informações sobre os administradores do site. Se ocorrer um erro no site, um email será enviado para os endereços listados em ADMINS.
+# SESSION_COOKIE_SECURE garante que os cookies de sessão sejam definidos apenas em conexões HTTPS.
+# CSRF_COOKIE_SECURE garante que os cookies CSRF sejam definidos apenas em conexões HTTPS.
+ 
+ 
+ 
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -40,9 +89,26 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+THIRD_APPS = [ # são as Lib/app que instalamos no projeto
+    "corsheaders",
+    
+    #... # update 11/03/2024 - removido esses ...
+]
+
+PROJECT_APPS = [ # são os apps que criamos no projeto 
+        # 'apps.base',		# update 11/03/2024
+        # 'apps.myapp',   # Removido esses apps que nao criamos ainda.
+]
+
+# INSTALLED_APPS é a variavel que django entende para fazer a leitura \
+# dos aplicativos então verifica a nomencratura.
+INSTALLED_APPS = DJANGO_APPS + THIRD_APPS + PROJECT_APPS
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # CORS
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -74,10 +140,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Banco de Dados.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR / 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, os.getenv('NAME_DB')),
+            #'USER':os.getenv('USER_DB')
+            #'PASSWORD': os.getenv('PASSWORD_DB')
+            #'HOST':os.getenv('HOST_DB')
+            #'PORT':os.getenv('PORT_DB') 
     }
 }
 
@@ -124,10 +195,20 @@ STATIC_URL = '/static/'
 # ]
 
 MEDIA_ROOT=os.path.join(BASE_DIR,'media')
-MEDIA_URL = '/media
+MEDIA_URL = '/media'
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Configuração de E-mail
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') 
+EMAIL_PORT = os.getenv('EMAIL_PORT') 
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') 
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
